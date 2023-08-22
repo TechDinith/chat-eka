@@ -4,4 +4,5 @@ export interface User {
   age: string;
   gender: string;
   hasNewMessage?: boolean;
+  lastActive?: Date;
 }

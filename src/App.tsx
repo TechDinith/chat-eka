@@ -9,12 +9,20 @@ import {
 import ChatRoom from "./components/ChatRoom";
 import { User } from "./interfaces/user.interface";
 import { seoText } from "./constants.chat";
+import { firestore } from "./firebase.config";
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+} from "firebase/firestore";
 
 const App: React.FC = () => {
   const [loggedInUser, setLoggedInUser] = useState<User | null>(null);
   const [activeUsers, setActiveUsers] = useState<User[]>([]);
 
-  const handleLogin = (username: string, nic: string) => {
+  const handleLogin = async (username: string, nic: string) => {
     const birthYear = extractBirthYear(nic);
     const gender = extractGender(nic);
     const age = calculateAge(parseInt(birthYear));
@@ -32,21 +40,38 @@ const App: React.FC = () => {
     localStorage.setItem("age", newUser.age);
     localStorage.setItem("gender", newUser.gender);
 
-    setLoggedInUser(newUser);
-    setActiveUsers((prevActiveUsers) => [...prevActiveUsers, newUser]);
-  };
+    try {
+      // Store the user information in Firestore
+      await addDoc(collection(firestore, "activeUsers"), newUser);
+      setLoggedInUser(newUser);
+    } catch (error) {
+      console.error("Error adding document:", error);
+    }
 
-  const handleLogout = () => {
+    setLoggedInUser(newUser);
+  };
+  const handleLogout = async () => {
     const nic = loggedInUser?.nic || "";
+
+    try {
+      // Delete the user's document from the activeUsers collection
+      await deleteDoc(doc(firestore, "activeUsers", nic));
+    } catch (error) {
+      console.error("Error deleting document:", error);
+    }
+
+    // Remove user from activeUsers state
+    setActiveUsers((prevActiveUsers) =>
+      prevActiveUsers.filter((user) => user.nic !== nic)
+    );
+
+    // Clear user data from local storage
     localStorage.removeItem("username");
     localStorage.removeItem("nic");
     localStorage.removeItem("age");
     localStorage.removeItem("gender");
-    setLoggedInUser(null);
 
-    setActiveUsers((prevActiveUsers) =>
-      prevActiveUsers.filter((user) => user.nic !== nic)
-    );
+    setLoggedInUser(null);
   };
 
   useEffect(() => {
@@ -66,6 +91,15 @@ const App: React.FC = () => {
 
       setLoggedInUser(storedUser);
     }
+
+    const fetchActiveUsers = async () => {
+      const activeUsersRef = collection(firestore, "activeUsers");
+      const querySnapshot = await getDocs(activeUsersRef);
+      const usersArray = querySnapshot.docs.map((doc) => doc.data() as User);
+      setActiveUsers(usersArray);
+    };
+
+    fetchActiveUsers();
   }, []);
 
   if (loggedInUser) {
