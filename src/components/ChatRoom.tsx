@@ -1,6 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { User } from "../interfaces/user.interface";
 import PrivateMessagingBox from "./PrivateMessage";
+import {
+  addDoc,
+  collection,
+  doc,
+  getDocs,
+  limit,
+  onSnapshot,
+  orderBy,
+  query,
+  updateDoc,
+  writeBatch,
+} from "firebase/firestore";
+import { firestore } from "../firebase.config";
 
 interface ChatRoomProps {
   activeUsers: User[];
@@ -9,65 +22,113 @@ interface ChatRoomProps {
   setActiveUsers: React.Dispatch<React.SetStateAction<User[]>>;
 }
 
-const ChatRoom: React.FC<ChatRoomProps> = ({
-  activeUsers,
-  setActiveUsers,
-  user,
-  onLogout,
-}) => {
-  const [messages, setMessages] = useState<string[]>([]);
+interface Message {
+  message: string;
+  timestamp: {
+    seconds: number;
+    nanoseconds: number;
+  };
+}
+const MAX_MESSAGE_COUNT = 500; // Set the maximum message count
+
+const ChatRoom: React.FC<ChatRoomProps> = ({ activeUsers, user, onLogout }) => {
+  const [messages, setMessages] = useState<Message[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [loggedOutUsername, setLoggedOutUsername] = useState<string | null>(
     null
   );
-  const [privateMessages, setPrivateMessages] = useState<string[]>([]);
   const [messageInput, setMessageInput] = useState("");
-  const [privateMessagesMap, setPrivateMessagesMap] = useState<
-    Record<string, string[]>
-  >({});
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (messageInput.trim() !== "") {
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        `${user.username}: ${messageInput}`,
-      ]);
+      const newMessage = `${user.username}: ${messageInput}`;
+
+      // Add the new message to Firestore
+      const messagesRef = collection(firestore, "messages");
+      await addDoc(messagesRef, {
+        message: newMessage,
+        timestamp: new Date(),
+      });
+
       setMessageInput(""); // Clear the input field after sending
+
+      // Check and delete older messages if necessary
+      const q = query(
+        messagesRef,
+        orderBy("timestamp"),
+        limit(MAX_MESSAGE_COUNT + 1)
+      );
+      const querySnapshot = await getDocs(q);
+      if (querySnapshot.size > MAX_MESSAGE_COUNT) {
+        const oldestMessages = querySnapshot.docs.slice(
+          0,
+          querySnapshot.size - MAX_MESSAGE_COUNT
+        );
+
+        // Create a WriteBatch instance to perform batch operations
+        const batch = writeBatch(firestore);
+
+        oldestMessages.forEach((doc) => {
+          const docRef = doc.ref;
+          batch.delete(docRef);
+        });
+
+        // Commit the batch operations
+        await batch.commit();
+      }
     }
   };
-  const loadPrivateMessages = (user1: User, user2: User): string[] => {
-    const users = [user1.nic, user2.nic].sort().join("-"); // Create a unique key
-    return privateMessagesMap[users] || [];
-  };
+
   useEffect(() => {
     if (user) {
       setLoggedOutUsername(null);
-    }
-    if (selectedUser) {
-      // Load private messages between the current user and selected user
-      const privateMessages = loadPrivateMessages(user, selectedUser);
-      setPrivateMessages(privateMessages);
-
-      const usersKey = [user.nic, selectedUser.nic].sort().join("-");
-      const privateMessagesObj = { [usersKey]: privateMessages };
-      setPrivateMessagesMap((prevMap) => ({
-        ...prevMap,
-        ...privateMessagesObj,
-      }));
     }
   }, [user, selectedUser]);
 
   useEffect(() => {
     if (selectedUser) {
-      const updatedUsers: User[] = activeUsers.map((user) =>
-        user === selectedUser ? { ...user, hasNewMessage: true } : user
-      );
-      setActiveUsers(updatedUsers);
+      const userDocRef = doc(firestore, "activeUsers", selectedUser.docId);
+
+      const unsubscribe = onSnapshot(userDocRef, (docSnapshot) => {
+        if (docSnapshot.exists() && docSnapshot.data().hasNewMessage) {
+          try {
+            updateDoc(userDocRef, {
+              hasNewMessage: false, // Set hasNewMessage to false
+            });
+          } catch (error) {
+            console.error("Error updating document:", error);
+          }
+        }
+      });
+
+      return () => {
+        unsubscribe();
+      };
     }
   }, [selectedUser]);
 
+  useEffect(() => {
+    const messagesRef = collection(firestore, "messages");
+    const q = query(messagesRef, orderBy("timestamp"), limit(100));
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const newMessages: Message[] = [];
+      querySnapshot.forEach((doc) => {
+        const messageData = doc.data() as Message;
+        newMessages.push({
+          ...messageData,
+        });
+      });
+      setMessages(newMessages);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
   return (
-    <div className="bg-black bg-opacity-70 text-black h-screen p-4">
+    <div className="bg-black bg-opacity-70 text-black flex-grow p-4">
       <div className="bg-white p-4 rounded shadow-md h-full bg-opacity-70">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold">චැට් එක</h2>{" "}
@@ -86,7 +147,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
           </button>
         </div>
         <div className="flex">
-          <div className="w-1/4 border-r pr-4">
+          <div className="w-1/4 border-r pr-4 h-screen">
             <h3 className="text-xl font-semibold mb-2">Users</h3>
             <ul className="space-y-2">
               {activeUsers.map((activeUser, i) => (
@@ -94,7 +155,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
                   key={i}
                   className={`flex ${
                     activeUser.hasNewMessage &&
-                    String(activeUser.nic) !== String(user.nic)
+                    String(activeUser.docId) !== String(user.docId)
                       ? "ring-2 ring-red-500"
                       : ""
                   }`}
@@ -110,8 +171,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
               ))}
               {loggedOutUsername && (
                 <li>
-                  <p className="text-red-600 mr-1">{loggedOutUsername}</p>{" "}
-                  logged out
+                  <p className="text-red-600 mr-1">{loggedOutUsername}</p>
                 </li>
               )}
             </ul>
@@ -135,7 +195,10 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
               <div className="w-full mr-4 overflow-y-auto max-h-96 mt-2 lg:w-3/4">
                 <ul className="space-y-2">
                   {messages
-                    .map((message, index) => <li key={index}>{message}</li>)
+                    .sort((a, b) => a.timestamp.seconds - b.timestamp.seconds)
+                    .map((message, index) => (
+                      <li key={index}>{message.message}</li>
+                    ))
                     .reverse()}
                 </ul>
               </div>
@@ -143,10 +206,9 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
 
             <div className="lg:w-1/4 w-full m-2">
               {selectedUser &&
-                String(selectedUser.nic) !== String(user.nic) && (
+                String(selectedUser.docId) !== String(user.docId) && (
                   <PrivateMessagingBox
-                    privateMessages={privateMessages}
-                    setPrivateMessages={setPrivateMessages}
+                    user={user}
                     selectedUser={selectedUser}
                   />
                 )}

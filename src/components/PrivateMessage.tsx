@@ -1,28 +1,89 @@
 import React, { useEffect, useState } from "react";
 import { User } from "../interfaces/user.interface";
+import {
+  collection,
+  doc,
+  getDoc,
+  onSnapshot,
+  setDoc,
+  updateDoc,
+} from "firebase/firestore";
+import { firestore } from "../firebase.config";
 
 interface PrivateMessagingBoxProps {
   selectedUser: User;
-  privateMessages: string[];
-  setPrivateMessages: React.Dispatch<React.SetStateAction<string[]>>;
+  user: User; // Add the current user
 }
+
+const activeUsersRef = collection(firestore, "activeUsers");
 
 const PrivateMessagingBox: React.FC<PrivateMessagingBoxProps> = ({
   selectedUser,
-  setPrivateMessages,
-  privateMessages,
+  user,
 }) => {
+  const [privateMessages, setPrivateMessages] = useState<string[]>([]);
   const [privateMessage, setPrivateMessage] = useState("");
 
-  useEffect(() => {
-    // Load private messages from props when the component mounts
-    setPrivateMessages(privateMessages);
-  }, [privateMessages]);
+  const privateMessagesRef = collection(firestore, "privateMessages");
+  const conversationId = [user.docId, selectedUser.docId].sort().join("-");
 
-  const handleSendPrivateMessage = () => {
+  useEffect(() => {
+    // Fetch and listen for private messages within the conversation
+    const conversationDocRef = doc(privateMessagesRef, conversationId);
+    const unsubscribe = onSnapshot(conversationDocRef, (docSnapshot) => {
+      if (docSnapshot.exists()) {
+        const conversationData = docSnapshot.data();
+        if (conversationData) {
+          setPrivateMessages(conversationData.messages || []);
+        }
+      } else {
+        setPrivateMessages([]);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [conversationId]);
+
+  const handleSendPrivateMessage = async () => {
     if (privateMessage.trim() !== "") {
-      const newMessage = `${selectedUser.username}: ${privateMessage}`;
-      setPrivateMessages((prevMessages) => [...prevMessages, newMessage]);
+      const newMessage = `${user.username}: ${privateMessage}`;
+
+      // Update sender's hasNewMessage field
+      const senderDocRef = doc(activeUsersRef, user.docId);
+      await updateDoc(senderDocRef, {
+        hasNewMessage: true,
+      });
+
+      // Update or create the conversation document
+      const conversationDocRef = doc(privateMessagesRef, conversationId);
+      const conversationSnapshot = await getDoc(conversationDocRef);
+      if (conversationSnapshot.exists()) {
+        // Update existing conversation
+        await updateDoc(conversationDocRef, {
+          messages: [...conversationSnapshot.data().messages, newMessage],
+        });
+
+        // Update recipient's hasNewMessage field
+        const recipientDocRef = doc(activeUsersRef, selectedUser.docId);
+        await updateDoc(recipientDocRef, {
+          hasNewMessage: true,
+        });
+      } else {
+        // Create new conversation
+        await setDoc(conversationDocRef, {
+          participants: [user.docId, selectedUser.docId],
+          messages: [newMessage],
+        });
+
+        // Update recipient's hasNewMessage field
+        const recipientDocRef = doc(activeUsersRef, selectedUser.docId);
+        await updateDoc(recipientDocRef, {
+          hasNewMessage: true,
+        });
+      }
+
       setPrivateMessage("");
     }
   };
