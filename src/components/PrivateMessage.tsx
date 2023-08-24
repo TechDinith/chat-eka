@@ -70,10 +70,8 @@ const PrivateMessagingBox: React.FC<PrivateMessagingBoxProps> = ({
   }, [conversationId]);
 
   const handleSendPrivateMessage = async () => {
-    console.log("rantt");
     try {
       if (privateMessage.trim() !== "") {
-        console.log("rant");
         const newMessage = `${user.username}: ${privateMessage}`;
 
         // Update sender's hasNewMessage field
@@ -107,7 +105,6 @@ const PrivateMessagingBox: React.FC<PrivateMessagingBoxProps> = ({
             recipientSnapshot.exists() &&
             Array.isArray(recipientSnapshot.data().hasNewMessage)
           ) {
-            console.log("ran");
             await updateDoc(recipientDocRef, {
               hasNewMessage: [
                 ...recipientSnapshot.data().hasNewMessage,
@@ -115,7 +112,6 @@ const PrivateMessagingBox: React.FC<PrivateMessagingBoxProps> = ({
               ],
             });
           } else {
-            console.log("ran1");
             await updateDoc(recipientDocRef, {
               hasNewMessage: [user.docId],
             });
@@ -134,7 +130,6 @@ const PrivateMessagingBox: React.FC<PrivateMessagingBoxProps> = ({
             recipientSnapshot.exists() &&
             Array.isArray(recipientSnapshot.data().hasNewMessage)
           ) {
-            console.log("ran2");
             await updateDoc(recipientDocRef, {
               hasNewMessage: [
                 ...recipientSnapshot.data().hasNewMessage,
@@ -142,7 +137,6 @@ const PrivateMessagingBox: React.FC<PrivateMessagingBoxProps> = ({
               ],
             });
           } else {
-            console.log("ra3");
             await updateDoc(recipientDocRef, {
               hasNewMessage: [user.docId],
             });

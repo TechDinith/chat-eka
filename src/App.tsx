@@ -17,6 +17,9 @@ import {
   doc,
   getDocs,
   onSnapshot,
+  query,
+  where,
+  writeBatch,
 } from "firebase/firestore";
 
 const App: React.FC = () => {
@@ -36,7 +39,7 @@ const App: React.FC = () => {
         };
         usersArray.push(userWithDocId);
       });
-      console.log("usersArray", usersArray);
+
       setActiveUsers(usersArray);
     });
 
@@ -93,6 +96,22 @@ const App: React.FC = () => {
     try {
       // Delete the user's document from the activeUsers collection
       await deleteDoc(doc(firestore, "activeUsers", docId));
+
+      // Delete all private messages associated with the user
+      const privateMessagesRef = collection(firestore, "privateMessages");
+      const querySnapshot = await getDocs(
+        query(
+          privateMessagesRef,
+          where("participants", "array-contains", docId)
+        )
+      );
+
+      const batch = writeBatch(firestore);
+      querySnapshot.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+
+      await batch.commit();
     } catch (error) {
       console.error("Error deleting document:", error);
     }
@@ -139,7 +158,7 @@ const App: React.FC = () => {
       const unsubscribe = onSnapshot(userDocRef, (docSnapshot) => {
         if (docSnapshot.exists()) {
           const updatedUserData = docSnapshot.data() as User;
-          console.log("updatedUsersData", updatedUserData);
+
           setLoggedInUser({
             ...loggedInUser,
             ...updatedUserData,

@@ -92,11 +92,12 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
           <div className="bg-white text-black p-4 rounded shadow-md max-w-md overflow-auto">
             <h3 className="text-xl font-semibold mb-2">Terms and Conditions</h3>
             <p>
-              We do not save this information on our servers. By accepting these
-              terms, you acknowledge that we have no responsibilities whatsoever
-              about the users or chats that happen once you're logged in and wll
-              also confim that you allow us to use your NIC Number (National
-              Idendtity Card Number) for determining your birth year and gender.
+              We do not save this information(NIC) on our servers. By accepting
+              these terms, you acknowledge that we have no responsibilities
+              whatsoever about the users or chats that happen once you're logged
+              in and wll also confim that you allow us to use your NIC Number
+              (National Idendtity Card Number) for determining your birth year
+              and gender.
             </p>
             <button
               className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
