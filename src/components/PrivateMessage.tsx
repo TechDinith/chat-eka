@@ -12,7 +12,10 @@ import { firestore } from "../firebase.config";
 
 interface PrivateMessagingBoxProps {
   selectedUser: User;
-  user: User; // Add the current user
+  user: User;
+  setLoggedInUser: React.Dispatch<React.SetStateAction<User | null>>;
+  setPrivateMessage: React.Dispatch<React.SetStateAction<string>>;
+  privateMessage: string;
 }
 
 const activeUsersRef = collection(firestore, "activeUsers");
@@ -20,9 +23,11 @@ const activeUsersRef = collection(firestore, "activeUsers");
 const PrivateMessagingBox: React.FC<PrivateMessagingBoxProps> = ({
   selectedUser,
   user,
+  setLoggedInUser,
+  setPrivateMessage,
+  privateMessage,
 }) => {
   const [privateMessages, setPrivateMessages] = useState<string[]>([]);
-  const [privateMessage, setPrivateMessage] = useState("");
 
   const privateMessagesRef = collection(firestore, "privateMessages");
   const conversationId = [user.docId, selectedUser.docId].sort().join("-");
@@ -46,16 +51,43 @@ const PrivateMessagingBox: React.FC<PrivateMessagingBoxProps> = ({
     };
   }, [conversationId]);
 
+  useEffect(() => {
+    // Listen for changes in the logged-in user's data
+    const userDocRef = doc(firestore, "activeUsers", user.docId);
+    const unsubscribe = onSnapshot(userDocRef, (docSnapshot) => {
+      if (docSnapshot.exists()) {
+        const updatedUserData = docSnapshot.data() as User;
+        setLoggedInUser({
+          ...user,
+          ...updatedUserData,
+        });
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [conversationId]);
+
   const handleSendPrivateMessage = async () => {
     if (privateMessage.trim() !== "") {
       const newMessage = `${user.username}: ${privateMessage}`;
 
       // Update sender's hasNewMessage field
-      const senderDocRef = doc(activeUsersRef, user.docId);
-      await updateDoc(senderDocRef, {
-        hasNewMessage: true,
-      });
-
+      // const senderDocRef = doc(activeUsersRef, user.docId);
+      // const senderSnapshot = await getDoc(senderDocRef);
+      // if (
+      //   senderSnapshot.exists() &&
+      //   Array.isArray(senderSnapshot.data().hasNewMessage)
+      // ) {
+      //   await updateDoc(senderDocRef, {
+      //     hasNewMessage: [...senderSnapshot.data().hasNewMessage],
+      //   });
+      // } else {
+      //   await updateDoc(senderDocRef, {
+      //     hasNewMessage: [user.docId],
+      //   });
+      // }
       // Update or create the conversation document
       const conversationDocRef = doc(privateMessagesRef, conversationId);
       const conversationSnapshot = await getDoc(conversationDocRef);
@@ -67,9 +99,19 @@ const PrivateMessagingBox: React.FC<PrivateMessagingBoxProps> = ({
 
         // Update recipient's hasNewMessage field
         const recipientDocRef = doc(activeUsersRef, selectedUser.docId);
-        await updateDoc(recipientDocRef, {
-          hasNewMessage: true,
-        });
+        const recipientSnapshot = await getDoc(recipientDocRef);
+        if (
+          recipientSnapshot.exists() &&
+          Array.isArray(recipientSnapshot.data().hasNewMessage)
+        ) {
+          await updateDoc(recipientDocRef, {
+            hasNewMessage: [...recipientSnapshot.data().hasNewMessage],
+          });
+        } else {
+          await updateDoc(recipientDocRef, {
+            hasNewMessage: [user.docId],
+          });
+        }
       } else {
         // Create new conversation
         await setDoc(conversationDocRef, {
@@ -79,9 +121,19 @@ const PrivateMessagingBox: React.FC<PrivateMessagingBoxProps> = ({
 
         // Update recipient's hasNewMessage field
         const recipientDocRef = doc(activeUsersRef, selectedUser.docId);
-        await updateDoc(recipientDocRef, {
-          hasNewMessage: true,
-        });
+        const recipientSnapshot = await getDoc(recipientDocRef);
+        if (
+          recipientSnapshot.exists() &&
+          Array.isArray(recipientSnapshot.data().hasNewMessage)
+        ) {
+          await updateDoc(recipientDocRef, {
+            hasNewMessage: [...recipientSnapshot.data().hasNewMessage],
+          });
+        } else {
+          await updateDoc(recipientDocRef, {
+            hasNewMessage: [user.docId],
+          });
+        }
       }
 
       setPrivateMessage("");

@@ -3,7 +3,7 @@ export interface User {
   docId: string;
   age: string;
   gender: string;
-  hasNewMessage?: boolean; // Change the type to string array
+  hasNewMessage?: string[]; // Change the type to string array
 }
 
 export interface ChatRoomProps {

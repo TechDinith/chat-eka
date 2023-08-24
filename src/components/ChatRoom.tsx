@@ -5,6 +5,7 @@ import {
   addDoc,
   collection,
   doc,
+  getDoc,
   getDocs,
   limit,
   onSnapshot,
@@ -19,7 +20,8 @@ interface ChatRoomProps {
   activeUsers: User[];
   user: User;
   onLogout: () => void;
-  setActiveUsers: React.Dispatch<React.SetStateAction<User[]>>;
+  setLoggedInUser: React.Dispatch<React.SetStateAction<User | null>>;
+  fetchActiveUsers: () => void;
 }
 
 interface Message {
@@ -31,13 +33,20 @@ interface Message {
 }
 const MAX_MESSAGE_COUNT = 500; // Set the maximum message count
 
-const ChatRoom: React.FC<ChatRoomProps> = ({ activeUsers, user, onLogout }) => {
+const ChatRoom: React.FC<ChatRoomProps> = ({
+  setLoggedInUser,
+  activeUsers,
+  user,
+  onLogout,
+  fetchActiveUsers,
+}) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [loggedOutUsername, setLoggedOutUsername] = useState<string | null>(
     null
   );
   const [messageInput, setMessageInput] = useState("");
+  const [privateMessage, setPrivateMessage] = useState("");
 
   const handleSendMessage = async () => {
     if (messageInput.trim() !== "") {
@@ -85,27 +94,35 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ activeUsers, user, onLogout }) => {
     }
   }, [user, selectedUser]);
 
-  useEffect(() => {
-    if (selectedUser) {
-      const userDocRef = doc(firestore, "activeUsers", selectedUser.docId);
+  const onSelectUser = async (activeUser: User) => {
+    setSelectedUser(activeUser);
 
-      const unsubscribe = onSnapshot(userDocRef, (docSnapshot) => {
-        if (docSnapshot.exists() && docSnapshot.data().hasNewMessage) {
-          try {
-            updateDoc(userDocRef, {
-              hasNewMessage: false, // Set hasNewMessage to false
-            });
-          } catch (error) {
-            console.error("Error updating document:", error);
-          }
+    if (activeUser) {
+      const userDocRef = doc(firestore, "activeUsers", user.docId);
+
+      try {
+        // Fetch the current user's data
+        const userDocSnapshot = await getDoc(userDocRef);
+        if (userDocSnapshot.exists() && userDocSnapshot.data().hasNewMessage) {
+          const updatedHasNewMessage = userDocSnapshot
+            .data()
+            .hasNewMessage.filter(
+              (senderDocId: any) =>
+                String(senderDocId) !== String(activeUser.docId)
+            );
+
+          // Update the user's hasNewMessage field
+          await updateDoc(userDocRef, {
+            hasNewMessage: updatedHasNewMessage,
+          });
         }
-      });
-
-      return () => {
-        unsubscribe();
-      };
+      } catch (error) {
+        console.error("Error updating hasNewMessage:", error);
+      }
     }
-  }, [selectedUser]);
+
+    fetchActiveUsers();
+  };
 
   useEffect(() => {
     const messagesRef = collection(firestore, "messages");
@@ -126,6 +143,11 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ activeUsers, user, onLogout }) => {
       unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    console.log("activeUsers", activeUsers);
+    fetchActiveUsers();
+  }, [privateMessage]);
 
   return (
     <div className="bg-black bg-opacity-70 text-black flex-grow p-4">
@@ -150,25 +172,28 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ activeUsers, user, onLogout }) => {
           <div className="w-1/4 border-r pr-4 h-screen">
             <h3 className="text-xl font-semibold mb-2">Users</h3>
             <ul className="space-y-2">
-              {activeUsers.map((activeUser, i) => (
-                <li
-                  key={i}
-                  className={`flex ${
-                    activeUser.hasNewMessage &&
-                    String(activeUser.docId) !== String(user.docId)
-                      ? "ring-2 ring-red-500"
-                      : ""
-                  }`}
-                  onClick={() => setSelectedUser(activeUser)}
-                >
-                  <p
-                    className="text-white mr-1 cursor-pointer"
-                    title={`${activeUser.username}\nAge: ${activeUser.age}\nGender: ${activeUser.gender}`}
+              {activeUsers.map((activeUser, i) => {
+                const isNewMessageFromUser =
+                  user.hasNewMessage &&
+                  user.hasNewMessage.includes(String(activeUser.docId));
+                return (
+                  <li
+                    key={i}
+                    className={`flex ${
+                      isNewMessageFromUser ? "ring-2 ring-red-500" : ""
+                    }`}
+                    onClick={() => onSelectUser(activeUser)}
                   >
-                    {activeUser.username}
-                  </p>
-                </li>
-              ))}
+                    <p
+                      className="text-white mr-1 cursor-pointer"
+                      title={`${activeUser.username}\nAge: ${activeUser.age}\nGender: ${activeUser.gender}`}
+                    >
+                      {activeUser.username}
+                    </p>
+                  </li>
+                );
+              })}
+
               {loggedOutUsername && (
                 <li>
                   <p className="text-red-600 mr-1">{loggedOutUsername}</p>
@@ -208,6 +233,9 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ activeUsers, user, onLogout }) => {
               {selectedUser &&
                 String(selectedUser.docId) !== String(user.docId) && (
                   <PrivateMessagingBox
+                    privateMessage={privateMessage}
+                    setPrivateMessage={setPrivateMessage}
+                    setLoggedInUser={setLoggedInUser}
                     user={user}
                     selectedUser={selectedUser}
                   />

@@ -132,7 +132,8 @@ const App: React.FC = () => {
     <div id="App">
       {loggedInUser ? (
         <ChatRoom
-          setActiveUsers={setActiveUsers}
+          fetchActiveUsers={fetchActiveUsers}
+          setLoggedInUser={setLoggedInUser}
           user={loggedInUser}
           activeUsers={activeUsers}
           onLogout={handleLogout}
