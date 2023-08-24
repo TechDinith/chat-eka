@@ -26,7 +26,7 @@ const App: React.FC = () => {
   // Function to fetch active users from Firestore
   const fetchActiveUsers = () => {
     const activeUsersRef = collection(firestore, "activeUsers");
-    onSnapshot(activeUsersRef, (querySnapshot) => {
+    const unsubscribe = onSnapshot(activeUsersRef, (querySnapshot) => {
       const usersArray: User[] = [];
       querySnapshot.forEach((doc) => {
         const userData = doc.data() as User;
@@ -36,8 +36,14 @@ const App: React.FC = () => {
         };
         usersArray.push(userWithDocId);
       });
+      console.log("usersArray", usersArray);
       setActiveUsers(usersArray);
     });
+
+    return () => {
+      // Unsubscribe when component unmounts or fetchActiveUsers is called again
+      unsubscribe();
+    };
   };
 
   const handleLogin = async (username: string, nic: string) => {
@@ -79,7 +85,6 @@ const App: React.FC = () => {
     } catch (error) {
       console.error("Error adding document:", error);
     }
-    fetchActiveUsers();
   };
 
   const handleLogout = async () => {
@@ -105,7 +110,6 @@ const App: React.FC = () => {
     localStorage.removeItem("docId"); // Clear the stored docId
 
     setLoggedInUser(null);
-    fetchActiveUsers();
   };
 
   useEffect(() => {
@@ -128,11 +132,31 @@ const App: React.FC = () => {
     }
   }, []);
 
+  // Listen for changes to the loggedInUser and update it with data from Firestore
+  useEffect(() => {
+    if (loggedInUser) {
+      const userDocRef = doc(firestore, "activeUsers", loggedInUser.docId);
+      const unsubscribe = onSnapshot(userDocRef, (docSnapshot) => {
+        if (docSnapshot.exists()) {
+          const updatedUserData = docSnapshot.data() as User;
+          console.log("updatedUsersData", updatedUserData);
+          setLoggedInUser({
+            ...loggedInUser,
+            ...updatedUserData,
+          });
+        }
+      });
+
+      return () => {
+        unsubscribe();
+      };
+    }
+  }, []);
+
   return (
     <div id="App">
       {loggedInUser ? (
         <ChatRoom
-          fetchActiveUsers={fetchActiveUsers}
           setLoggedInUser={setLoggedInUser}
           user={loggedInUser}
           activeUsers={activeUsers}

@@ -70,73 +70,89 @@ const PrivateMessagingBox: React.FC<PrivateMessagingBoxProps> = ({
   }, [conversationId]);
 
   const handleSendPrivateMessage = async () => {
-    if (privateMessage.trim() !== "") {
-      const newMessage = `${user.username}: ${privateMessage}`;
+    console.log("rantt");
+    try {
+      if (privateMessage.trim() !== "") {
+        console.log("rant");
+        const newMessage = `${user.username}: ${privateMessage}`;
 
-      // Update sender's hasNewMessage field
-      // const senderDocRef = doc(activeUsersRef, user.docId);
-      // const senderSnapshot = await getDoc(senderDocRef);
-      // if (
-      //   senderSnapshot.exists() &&
-      //   Array.isArray(senderSnapshot.data().hasNewMessage)
-      // ) {
-      //   await updateDoc(senderDocRef, {
-      //     hasNewMessage: [...senderSnapshot.data().hasNewMessage],
-      //   });
-      // } else {
-      //   await updateDoc(senderDocRef, {
-      //     hasNewMessage: [user.docId],
-      //   });
-      // }
-      // Update or create the conversation document
-      const conversationDocRef = doc(privateMessagesRef, conversationId);
-      const conversationSnapshot = await getDoc(conversationDocRef);
-      if (conversationSnapshot.exists()) {
-        // Update existing conversation
-        await updateDoc(conversationDocRef, {
-          messages: [...conversationSnapshot.data().messages, newMessage],
-        });
-
-        // Update recipient's hasNewMessage field
-        const recipientDocRef = doc(activeUsersRef, selectedUser.docId);
-        const recipientSnapshot = await getDoc(recipientDocRef);
-        if (
-          recipientSnapshot.exists() &&
-          Array.isArray(recipientSnapshot.data().hasNewMessage)
-        ) {
-          await updateDoc(recipientDocRef, {
-            hasNewMessage: [...recipientSnapshot.data().hasNewMessage],
+        // Update sender's hasNewMessage field
+        // const senderDocRef = doc(activeUsersRef, user.docId);
+        // const senderSnapshot = await getDoc(senderDocRef);
+        // if (
+        //   senderSnapshot.exists() &&
+        //   Array.isArray(senderSnapshot.data().hasNewMessage)
+        // ) {
+        //   await updateDoc(senderDocRef, {
+        //     hasNewMessage: [...senderSnapshot.data().hasNewMessage],
+        //   });
+        // } else {
+        //   await updateDoc(senderDocRef, {
+        //     hasNewMessage: [user.docId],
+        //   });
+        // }
+        // Update or create the conversation document
+        const conversationDocRef = doc(privateMessagesRef, conversationId);
+        const conversationSnapshot = await getDoc(conversationDocRef);
+        if (conversationSnapshot.exists()) {
+          // Update existing conversation
+          await updateDoc(conversationDocRef, {
+            messages: [...conversationSnapshot.data().messages, newMessage],
           });
+
+          // Update recipient's hasNewMessage field
+          const recipientDocRef = doc(activeUsersRef, selectedUser.docId);
+          const recipientSnapshot = await getDoc(recipientDocRef);
+          if (
+            recipientSnapshot.exists() &&
+            Array.isArray(recipientSnapshot.data().hasNewMessage)
+          ) {
+            console.log("ran");
+            await updateDoc(recipientDocRef, {
+              hasNewMessage: [
+                ...recipientSnapshot.data().hasNewMessage,
+                user.docId,
+              ],
+            });
+          } else {
+            console.log("ran1");
+            await updateDoc(recipientDocRef, {
+              hasNewMessage: [user.docId],
+            });
+          }
         } else {
-          await updateDoc(recipientDocRef, {
-            hasNewMessage: [user.docId],
+          // Create new conversation
+          await setDoc(conversationDocRef, {
+            participants: [user.docId, selectedUser.docId],
+            messages: [newMessage],
           });
-        }
-      } else {
-        // Create new conversation
-        await setDoc(conversationDocRef, {
-          participants: [user.docId, selectedUser.docId],
-          messages: [newMessage],
-        });
 
-        // Update recipient's hasNewMessage field
-        const recipientDocRef = doc(activeUsersRef, selectedUser.docId);
-        const recipientSnapshot = await getDoc(recipientDocRef);
-        if (
-          recipientSnapshot.exists() &&
-          Array.isArray(recipientSnapshot.data().hasNewMessage)
-        ) {
-          await updateDoc(recipientDocRef, {
-            hasNewMessage: [...recipientSnapshot.data().hasNewMessage],
-          });
-        } else {
-          await updateDoc(recipientDocRef, {
-            hasNewMessage: [user.docId],
-          });
+          // Update recipient's hasNewMessage field
+          const recipientDocRef = doc(activeUsersRef, selectedUser.docId);
+          const recipientSnapshot = await getDoc(recipientDocRef);
+          if (
+            recipientSnapshot.exists() &&
+            Array.isArray(recipientSnapshot.data().hasNewMessage)
+          ) {
+            console.log("ran2");
+            await updateDoc(recipientDocRef, {
+              hasNewMessage: [
+                ...recipientSnapshot.data().hasNewMessage,
+                user.docId,
+              ],
+            });
+          } else {
+            console.log("ra3");
+            await updateDoc(recipientDocRef, {
+              hasNewMessage: [user.docId],
+            });
+          }
         }
+
+        setPrivateMessage("");
       }
-
-      setPrivateMessage("");
+    } catch (e) {
+      console.log("e", e);
     }
   };
 

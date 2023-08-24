@@ -21,7 +21,6 @@ interface ChatRoomProps {
   user: User;
   onLogout: () => void;
   setLoggedInUser: React.Dispatch<React.SetStateAction<User | null>>;
-  fetchActiveUsers: () => void;
 }
 
 interface Message {
@@ -38,7 +37,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
   activeUsers,
   user,
   onLogout,
-  fetchActiveUsers,
 }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -120,8 +118,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
         console.error("Error updating hasNewMessage:", error);
       }
     }
-
-    fetchActiveUsers();
   };
 
   useEffect(() => {
@@ -143,11 +139,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
       unsubscribe();
     };
   }, []);
-
-  useEffect(() => {
-    console.log("activeUsers", activeUsers);
-    fetchActiveUsers();
-  }, [privateMessage]);
 
   return (
     <div className="bg-black bg-opacity-70 text-black flex-grow p-4">
