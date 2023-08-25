@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import logo from "../assets/images/logo.png";
 
 interface LoginFormProps {
   onLogin: (username: string, nic: string) => void;
@@ -20,13 +21,20 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="bg-black text-white bg-opacity-70 flex flex-col gap-6 items-center justify-center min-h-screen">
+    <div className="bg-black text-white bg-opacity-70 flex flex-col items-center justify-center min-h-screen">
       <div className="flex flex-col justify-center">
-        <h2 className="text-5xl mb-4 m-4">චැට් එකට පහලින් සෙට් වෙන්න</h2>
-        <p className="text-sm mb-4 m-4">
-          Register වෙන්න ඕනෙ නෑ කැමති username එකක් දාගෙන NIC/ID නම්බර් එක ගහල
-          ලොග් වෙන්න
-        </p>
+        <div className="flex justify-center items-center">
+          <div className="md:w-1/6 w-1/3">
+            <img src={logo} className="w-full h-full " alt="Logo" />
+          </div>
+          <h2 className="md:text-5xl text-3xl mb-4 m-4">ට පහලින් සෙට් වෙන්න</h2>
+        </div>
+        <div className="flex justify-center items-center">
+          <p className="text-sm mb-4 m-4">
+            Register වෙන්න ඕනෙ නෑ කැමති username එකක් දාගෙන NIC/ID නම්බර් එක ගහල
+            ලොග් වෙන්න
+          </p>
+        </div>
       </div>
       <form
         onSubmit={handleSubmit}

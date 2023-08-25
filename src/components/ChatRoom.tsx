@@ -87,6 +87,24 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
   };
 
   useEffect(() => {
+    // Listen for changes in the logged-in user's data
+    const userDocRef = doc(firestore, "activeUsers", user.docId);
+    const unsubscribe = onSnapshot(userDocRef, (docSnapshot) => {
+      if (docSnapshot.exists()) {
+        const updatedUserData = docSnapshot.data() as User;
+        setLoggedInUser({
+          ...user,
+          ...updatedUserData,
+        });
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [selectedUser, activeUsers]);
+
+  useEffect(() => {
     if (user) {
       setLoggedOutUsername(null);
     }

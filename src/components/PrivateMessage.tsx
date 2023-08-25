@@ -74,21 +74,6 @@ const PrivateMessagingBox: React.FC<PrivateMessagingBoxProps> = ({
       if (privateMessage.trim() !== "") {
         const newMessage = `${user.username}: ${privateMessage}`;
 
-        // Update sender's hasNewMessage field
-        // const senderDocRef = doc(activeUsersRef, user.docId);
-        // const senderSnapshot = await getDoc(senderDocRef);
-        // if (
-        //   senderSnapshot.exists() &&
-        //   Array.isArray(senderSnapshot.data().hasNewMessage)
-        // ) {
-        //   await updateDoc(senderDocRef, {
-        //     hasNewMessage: [...senderSnapshot.data().hasNewMessage],
-        //   });
-        // } else {
-        //   await updateDoc(senderDocRef, {
-        //     hasNewMessage: [user.docId],
-        //   });
-        // }
         // Update or create the conversation document
         const conversationDocRef = doc(privateMessagesRef, conversationId);
         const conversationSnapshot = await getDoc(conversationDocRef);

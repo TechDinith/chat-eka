@@ -49,6 +49,27 @@ const App: React.FC = () => {
     };
   };
 
+  // Listen for changes to the loggedInUser and update it with data from Firestore
+  useEffect(() => {
+    if (loggedInUser) {
+      const userDocRef = doc(firestore, "activeUsers", loggedInUser.docId);
+      const unsubscribe = onSnapshot(userDocRef, (docSnapshot) => {
+        if (docSnapshot.exists()) {
+          const updatedUserData = docSnapshot.data() as User;
+
+          setLoggedInUser({
+            ...loggedInUser,
+            ...updatedUserData,
+          });
+        }
+      });
+
+      return () => {
+        unsubscribe();
+      };
+    }
+  }, []);
+
   const handleLogin = async (username: string, nic: string) => {
     const birthYear = extractBirthYear(nic);
     const gender = extractGender(nic);
@@ -148,27 +169,6 @@ const App: React.FC = () => {
       };
 
       setLoggedInUser(storedUser);
-    }
-  }, []);
-
-  // Listen for changes to the loggedInUser and update it with data from Firestore
-  useEffect(() => {
-    if (loggedInUser) {
-      const userDocRef = doc(firestore, "activeUsers", loggedInUser.docId);
-      const unsubscribe = onSnapshot(userDocRef, (docSnapshot) => {
-        if (docSnapshot.exists()) {
-          const updatedUserData = docSnapshot.data() as User;
-
-          setLoggedInUser({
-            ...loggedInUser,
-            ...updatedUserData,
-          });
-        }
-      });
-
-      return () => {
-        unsubscribe();
-      };
     }
   }, []);
 
