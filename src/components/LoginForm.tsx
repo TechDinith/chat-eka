@@ -1,123 +1,96 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import logo from "../assets/images/logo.png";
+import { Button, Input, Modal } from "./ui";
 
-interface LoginFormProps {
+interface Props {
   onLogin: (username: string, nic: string) => void;
 }
 
-const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
+export default function LoginForm({ onLogin }: Props) {
   const [username, setUsername] = useState("");
-  const [nic, setNIC] = useState("");
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [showTermsPopup, setShowTermsPopup] = useState(false);
+  const [nic, setNic] = useState("");
+  const [accepted, setAccepted] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (acceptedTerms) {
-      onLogin(username, nic);
-    } else {
-      alert("Please accept the terms and conditions.");
-    }
+    if (!accepted) return alert("Please accept the terms and conditions.");
+    onLogin(username, nic);
   };
 
   return (
-    <div className="bg-black text-white bg-opacity-70 flex flex-col items-center justify-center min-h-screen">
-      <div className="flex flex-col justify-center">
-        <div className="flex justify-center items-center">
-          <div className="md:w-1/6 w-1/3">
-            <img src={logo} className="w-full h-full " alt="Logo" />
-          </div>
-          <h2 className="md:text-5xl text-3xl mb-4 m-4">ට පහලින් සෙට් වෙන්න</h2>
-        </div>
-        <div className="flex justify-center items-center">
-          <p className="text-sm mb-4 m-4">
-            Register වෙන්න ඕනෙ නෑ කැමති username එකක් දාගෙන NIC/ID නම්බර් එක ගහල
-            ලොග් වෙන්න
-          </p>
-        </div>
+    <div className="bg-black/70 text-white flex flex-col items-center justify-center min-h-screen">
+      <div className="flex flex-col items-center mb-4">
+        <img src={logo} className="w-1/3 md:w-1/6" alt="Logo" />
+        <h2 className="text-3xl md:text-5xl mb-2 mt-4">ට පහලින් සෙට් වෙන්න</h2>
+        <p className="text-sm text-center max-w-md">
+          Register වෙන්න ඕනෙ නෑ කැමති username එකක් දාගෙන NIC/ID නම්බර් එක
+          ගහල ලොග් වෙන්න
+        </p>
       </div>
+
       <form
         onSubmit={handleSubmit}
-        className="bg-white text-black m-4 p-8 rounded shadow-md flex flex-col gap-2"
+        className="bg-white text-black p-8 rounded shadow-md flex flex-col gap-3 w-full max-w-sm mx-4"
       >
-        <div className="flex justify-center">
-          <h2 className="text-5xl mb-4">Login</h2>
-        </div>
+        <h2 className="text-5xl text-center mb-2">Login</h2>
         <div>
-          <label htmlFor="username">Username: </label>
-          <input
+          <label htmlFor="username" className="block mb-1">
+            Username:
+          </label>
+          <Input
             id="username"
-            className="p-2"
-            type="text"
-            placeholder="Username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
+            placeholder="Username"
             required
           />
         </div>
         <div>
-          <label htmlFor="nic">NIC: </label>
-          <input
+          <label htmlFor="nic" className="block mb-1">
+            NIC:
+          </label>
+          <Input
             id="nic"
-            type="text"
-            className="p-2"
-            placeholder="NIC"
             value={nic}
-            onChange={(e) => setNIC(e.target.value)}
+            onChange={(e) => setNic(e.target.value)}
+            placeholder="NIC"
             required
             pattern="^\d{9}(?:[VX]|[vx])$|^\d{12}$"
-            title="NIC must be 10 digits with 'V', 'X' or only digits (for 12 digits)"
+            title="NIC must be 10 digits ending with V/X, or 12 digits"
           />
         </div>
-        <div className="flex items-center gap-2">
+        <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
-            id="acceptTerms"
-            checked={acceptedTerms}
-            onChange={(e) => setAcceptedTerms(e.target.checked)}
-            className="mr-2"
-            required
+            checked={accepted}
+            onChange={(e) => setAccepted(e.target.checked)}
           />
-          <label htmlFor="acceptTerms">
-            I accept the{" "}
-            <span
-              className="text-blue-500 cursor-pointer"
-              onClick={() => setShowTermsPopup(true)}
-            >
-              terms and conditions
-            </span>
-          </label>
-        </div>
-        <button
-          type="submit"
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full mt-4"
-        >
+          I accept the{" "}
+          <span
+            className="text-blue-500 cursor-pointer underline"
+            onClick={() => setShowTerms(true)}
+          >
+            terms and conditions
+          </span>
+        </label>
+        <Button type="submit" className="w-full mt-2">
           Login
-        </button>
+        </Button>
       </form>
-      {showTermsPopup && (
-        <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-80 flex items-center justify-center">
-          <div className="bg-white text-black p-4 rounded shadow-md max-w-md overflow-auto">
-            <h3 className="text-xl font-semibold mb-2">Terms and Conditions</h3>
-            <p>
-              We do not save this information(NIC) on our servers. By accepting
-              these terms, you acknowledge that we have no responsibilities
-              whatsoever about the users or chats that happen once you're logged
-              in and wll also confim that you allow us to use your NIC Number
-              (National Idendtity Card Number) for determining your birth year
-              and gender.
-            </p>
-            <button
-              className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-              onClick={() => setShowTermsPopup(false)}
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
+
+      <Modal
+        open={showTerms}
+        onClose={() => setShowTerms(false)}
+        title="Terms and Conditions"
+      >
+        <p>
+          We do not save your NIC on our servers. By accepting, you acknowledge
+          that we have no responsibilities whatsoever about the users or chats
+          that happen once you're logged in and also confirm that you allow us
+          to use your NIC for determining your birth year and gender.
+        </p>
+      </Modal>
     </div>
   );
-};
-
-export default LoginForm;
+}
