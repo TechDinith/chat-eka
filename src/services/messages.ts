@@ -25,7 +25,7 @@ export async function addMessage(username: string, text: string) {
 export function subscribeMessages(onMessages: (msgs: Message[]) => void): Unsubscribe {
   const q = query(ref, orderBy("timestamp"), limit(100));
   return onSnapshot(q, (snapshot) => {
-    onMessages(snapshot.docs.map((d) => d.data() as Message));
+    onMessages(snapshot.docs.map((d) => ({ ...d.data(), id: d.id } as Message)));
   });
 }
 

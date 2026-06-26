@@ -9,11 +9,10 @@ export default function App() {
   if (!user) return <LoginForm onLogin={login} />;
 
   return (
-    <ChatRoom
-      user={user}
-      setUser={setUser}
-      activeUsers={activeUsers}
-      onLogout={logout}
-    />
+      <ChatRoom
+        user={user}
+        activeUsers={activeUsers}
+        onLogout={logout}
+      />
   );
 }

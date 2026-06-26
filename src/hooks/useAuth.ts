@@ -7,27 +7,23 @@ import {
   calculateAge,
 } from "../functions/functions.chat";
 
+const SESSION_KEY = "chat-eka-session";
+
 function loadSession(): User | null {
-  const username = localStorage.getItem("username");
-  const age = localStorage.getItem("age");
-  const gender = localStorage.getItem("gender");
-  const docId = localStorage.getItem("docId");
-  return username && age && gender && docId
-    ? { username, age, gender, docId }
-    : null;
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
 }
 
 function saveSession(u: User) {
-  localStorage.setItem("username", u.username);
-  localStorage.setItem("age", u.age);
-  localStorage.setItem("gender", u.gender);
-  localStorage.setItem("docId", u.docId);
+  localStorage.setItem(SESSION_KEY, JSON.stringify(u));
 }
 
 function clearSession() {
-  ["username", "nic", "age", "gender", "docId"].forEach((k) =>
-    localStorage.removeItem(k)
-  );
+  localStorage.removeItem(SESSION_KEY);
 }
 
 export function useAuth() {
@@ -44,12 +40,10 @@ export function useAuth() {
   const login = useCallback(async (username: string, nic: string) => {
     const birthYear = extractBirthYear(nic);
     const gender = extractGender(nic);
-    const age = calculateAge(Number(birthYear));
-    const ageStr = age.toString();
+    const age = calculateAge(Number(birthYear)).toString();
 
-    const docId = await activeUsers.createUser({ username, age: ageStr, gender });
-    const u: User = { username, age: ageStr, gender, docId };
-    localStorage.setItem("nic", nic);
+    const docId = await activeUsers.createUser({ username, age, gender });
+    const u: User = { username, age, gender, docId };
     saveSession(u);
     setUser(u);
   }, []);

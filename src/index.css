@@ -1,10 +1,19 @@
 @import "tailwindcss";
 
+@theme {
+  --color-glass: rgba(255, 255, 255, 0.08);
+  --color-glass-light: rgba(255, 255, 255, 0.12);
+  --color-glass-border: rgba(255, 255, 255, 0.15);
+  --color-glass-hover: rgba(255, 255, 255, 0.14);
+}
+
 body {
   margin: 0;
   padding: 0;
-  background-image: url("./assets/images/chateka-main.jpg");
-  background-attachment: fixed;
-  background-size: cover;
-  background-position: center;
+  background: linear-gradient(135deg, #0f0a1a 0%, #12102a 25%, #0a0a1a 50%, #100818 75%, #0a0a12 100%);
+  min-height: 100vh;
 }
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }

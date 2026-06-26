@@ -10,6 +10,7 @@ import {
   query,
   where,
   writeBatch,
+  arrayRemove,
   type Unsubscribe,
 } from "firebase/firestore";
 import { firestore } from "../firebase.config";
@@ -52,16 +53,8 @@ export async function getUser(docId: string) {
 }
 
 export async function clearNewMessage(docId: string, senderDocId: string) {
-  const userDoc = await getDoc(doc(ref, docId));
-  if (!userDoc.exists()) return;
-
-  const data = userDoc.data();
-  if (!data.hasNewMessage) return;
-
   await updateDoc(doc(ref, docId), {
-    hasNewMessage: data.hasNewMessage.filter(
-      (id: string) => id !== senderDocId
-    ),
+    hasNewMessage: arrayRemove(senderDocId),
   });
 }
 
