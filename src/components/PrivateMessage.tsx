@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import type { User } from "../interfaces/user.interface";
 import { usePrivateMessages } from "../hooks";
 import { Button, Input } from "./ui";
@@ -23,6 +23,11 @@ function avatarColor(name: string) {
 export default function PrivateMessage({ user, selectedUser, onClose }: Props) {
   const [input, setInput] = useState("");
   const { messages, send } = usePrivateMessages(user.docId, selectedUser.docId);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -45,7 +50,7 @@ export default function PrivateMessage({ user, selectedUser, onClose }: Props) {
       </div>
 
       <div className="flex-1 overflow-y-auto p-3 space-y-1">
-        {[...messages].reverse().map((m, i) => {
+        {messages.map((m, i) => {
           const sender = m.startsWith(`${user.username}: `) ? user.username : selectedUser.username;
           const text = m.includes(": ") ? m.slice(m.indexOf(": ") + 2) : m;
           const isOwn = sender === user.username;
@@ -66,6 +71,7 @@ export default function PrivateMessage({ user, selectedUser, onClose }: Props) {
             </div>
           );
         })}
+        <div ref={bottomRef} />
       </div>
 
       <div className="p-3 border-t border-white/10">

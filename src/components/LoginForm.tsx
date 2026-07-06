@@ -3,7 +3,7 @@ import logo from "../assets/images/logo.png";
 import { Button, Input, Modal } from "./ui";
 
 interface Props {
-  onLogin: (username: string, nic: string) => void;
+  onLogin: (username: string, nic: string) => Promise<void>;
 }
 
 export default function LoginForm({ onLogin }: Props) {
@@ -12,12 +12,18 @@ export default function LoginForm({ onLogin }: Props) {
   const [accepted, setAccepted] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [touched, setTouched] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setTouched(true);
     if (!accepted) return;
-    onLogin(username, nic);
+    setLoading(true);
+    try {
+      await onLogin(username, nic);
+    } catch {
+      setLoading(false);
+    }
   };
 
   return (
@@ -93,8 +99,16 @@ export default function LoginForm({ onLogin }: Props) {
             </p>
           )}
 
-          <Button type="submit" variant="gradient" className="w-full">
-            Login
+          <Button type="submit" variant="gradient" className="w-full" disabled={loading}>
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Logging in...
+              </span>
+            ) : "Login"}
           </Button>
         </form>
       </div>

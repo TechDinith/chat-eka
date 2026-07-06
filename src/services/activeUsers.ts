@@ -1,7 +1,7 @@
 import {
   collection,
   doc,
-  addDoc,
+  setDoc,
   getDoc,
   getDocs,
   updateDoc,
@@ -18,13 +18,12 @@ import type { User } from "../interfaces/user.interface";
 
 const ref = collection(firestore, "activeUsers");
 
-export async function createUser(data: {
+export async function setUser(docId: string, data: {
   username: string;
   age: string;
   gender: string;
 }) {
-  const docRef = await addDoc(ref, data);
-  return docRef.id;
+  await setDoc(doc(ref, docId), data);
 }
 
 export async function removeUser(docId: string) {

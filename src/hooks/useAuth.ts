@@ -42,8 +42,10 @@ export function useAuth() {
     const gender = extractGender(nic);
     const age = calculateAge(Number(birthYear)).toString();
 
-    const docId = await activeUsers.createUser({ username, age, gender });
-    const u: User = { username, age, gender, docId };
+    const hash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(nic))))
+      .slice(0, 10).map((b) => b.toString(16).padStart(2, "0")).join("");
+    await activeUsers.setUser(hash, { username, age, gender });
+    const u: User = { username, age, gender, docId: hash };
     saveSession(u);
     setUser(u);
   }, []);
@@ -51,7 +53,7 @@ export function useAuth() {
   const logout = useCallback(async () => {
     if (!user?.docId) return;
     await activeUsers.removeUser(user.docId);
-    await activeUsers.deleteUserPrivateMessages(user.docId);
+    activeUsers.deleteUserPrivateMessages(user.docId).catch(() => {});
     clearSession();
     setUser(null);
   }, [user?.docId]);

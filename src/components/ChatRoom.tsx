@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import type { User } from "../interfaces/user.interface";
 import { useMessages } from "../hooks";
 import { Button, Input } from "./ui";
@@ -55,6 +55,11 @@ export default function ChatRoom({ user, activeUsers, onLogout }: Props) {
   const [showUsers, setShowUsers] = useState(false);
   const [input, setInput] = useState("");
   const { messages, send, sending } = useMessages();
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -119,6 +124,7 @@ export default function ChatRoom({ user, activeUsers, onLogout }: Props) {
                         {sender.charAt(0).toUpperCase()}
                       </div>
                     )}
+              <div ref={bottomRef} />
                     <div className={`max-w-[75%] sm:max-w-[70%] ${isOwn ? "items-end" : "items-start"}`}>
                       {!isOwn && <p className="text-[10px] text-white/40 mb-0.5 px-1">{sender}</p>}
                       <div className={`px-3 py-2 rounded-2xl text-sm leading-relaxed break-words ${
