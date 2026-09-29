@@ -104,3 +104,48 @@ Real-time Sinhala chatroom. Users login with username + NIC (Sri Lanka) → age/
 - Using radix-ui primitives + class-variance-authority + tailwind-merge for components
 - All Firebase operations extracted to services/
 - Custom hooks for real-time subscriptions
+
+## Session 4 - SEO & Google Indexing (completed)
+
+### Competitive Research
+- **srilankanchat.com** is the real threat: 30 sitemap URLs (12 static + 18 blog posts)
+- **lankafriends.com**: separate landing page per search intent (`/chatroom`, `/chat`, `/group-chat`)
+- **onlanka.com/chat**: keyword-stuffed title, "launched 2004", cited in Sri Lanka Grade 11 ICT textbook
+- **kaputa.com**: ranks on domain age alone
+- Shared tactics: many indexable pages, keyword-variant titles, long body text, internal links, authority claims
+
+### Done
+- Created `public/sitemap.xml` (was 404) — now 7 URLs
+- `public/robots.txt` — added `Sitemap:` directive
+- `index.html` — canonical, OG + Twitter cards, `og:locale:alternate`, bilingual description, `<noscript>` bilingual content
+- `public/manifest.json` — replaced CRA defaults with Chat Eka branding
+- Created `src/hooks/useSeo.ts` — per-route `document.title` + meta description (creates tags if missing)
+- Created `src/content/pages.ts` — bilingual content data for 6 pages, keyword variants embedded
+- Created `src/components/PageShell.tsx` — header/footer layout for internal linking
+- Created `src/components/ContentPage.tsx` — renders any page from content data
+- Created `src/components/AboutSection.tsx` — bilingual feature block + long-tail keyword variants on login screen
+- `src/App.tsx` — added `react-router-dom` v7 routing; `/` = chat, 6 content routes, `*` fallback
+- `vercel.json` — added SPA catch-all rewrite + immutable asset caching
+
+### Keyword Strategy
+Target long-tail variants surfaced by competitor analysis, embedded in Sinhala + English:
+`lanka chat online`, `sinhala chat`, `chat srilanka`, `lanka online chat`, `sinhala chat room`,
+`sinhala group chat`, `sri lanka friends chat online free`, `lanka friends`, `sri lanka chat`,
+`chat eka`, `චැට් එක`, `සිංහල චැට්`
+
+### Routes
+| Route | Priority |
+|---|---|
+| `/` | 1.0 |
+| `/about` | 0.8 |
+| `/help` | 0.7 |
+| `/community-guidelines` | 0.6 |
+| `/safety-guide` | 0.6 |
+| `/privacy` | 0.3 |
+| `/terms` | 0.3 |
+
+### Important Notes
+- **Vercel serves static files before applying rewrites**, so `/(.*)` → `/index.html` is safe; a negative-lookahead regex is NOT supported and breaks deploys
+- Pages are **client-rendered only** (no prerender). Google renders JS but it's slower and less reliable. Prerendering is the recommended next step — content is already data-driven in `src/content/pages.ts` to make this easy
+- `lang="si"` set on `<html>`; page is bilingual so no `hreflang` (only valid for separate URLs per language)
+- Domain stays `chat-eka.vercel.app` (user decision)

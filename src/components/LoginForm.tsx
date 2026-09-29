@@ -1,5 +1,6 @@
 import { useState } from "react";
 import logo from "../assets/images/logo.png";
+import AboutSection from "./AboutSection";
 import { Button, Input, Modal } from "./ui";
 
 interface Props {
@@ -27,10 +28,10 @@ export default function LoginForm({ onLogin }: Props) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center gap-8 p-4 py-10">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-6">
-          <img src={logo} className="w-32 mb-4" alt="Logo" />
+          <img src={logo} className="w-32 mb-4" alt="Chat Eka - චැට් එක logo" />
           <h1 className="text-2xl font-bold text-white text-center">
             පහලින් සෙට් වෙන්න
           </h1>
@@ -112,6 +113,8 @@ export default function LoginForm({ onLogin }: Props) {
           </Button>
         </form>
       </div>
+
+      <AboutSection />
 
       <Modal
         open={showTerms}
