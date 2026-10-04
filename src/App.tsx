@@ -1,4 +1,5 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { Analytics } from "@vercel/analytics/react";
 import { useAuth, useActiveUsers } from "./hooks";
 import LoginForm from "./components/LoginForm";
 import ChatRoom from "./components/ChatRoom";
@@ -24,6 +25,7 @@ export default function App() {
         ))}
         <Route path="*" element={<ContentPage slug="about" />} />
       </Routes>
+      <Analytics />
     </BrowserRouter>
   );
 }
